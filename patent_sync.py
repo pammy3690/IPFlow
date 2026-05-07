@@ -108,7 +108,7 @@ def process_patent(patent_number):
 # -----------------------------
 # RUN 1 PATENT FOR PRACTICE
 # -----------------------------
-test_ids = [534567]
+test_ids = [510224]
 
 for pid in test_ids:
     print(f"\nProcessing patent {pid}")
