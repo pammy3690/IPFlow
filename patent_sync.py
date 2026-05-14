@@ -1,3 +1,5 @@
+import time
+
 from dotenv import load_dotenv
 import requests
 import os
@@ -54,32 +56,76 @@ def parse_patent_xml(xml_data, client_name=None):
     if error is not None:
         print("API Error:", error.text)
         return None
-
-    # Ensure <Patent> exists
-    patent = root.find(".//pat:Patent", ns)
+    #XML Schema Patent structure
+    ns = {
+        "p": "http://www.iponz.govt.nz/XMLSchema/patents"
+    }
+    # Ensure <Patent> root exists
+    patent = root.find(".//p:Patent", ns)
     if patent is None:
         print("No <Patent> element found — invalid patent number")
         return None
 
     # Safe getter
     def safe(elem):
-        return elem.text if elem is not None else None
+        if elem is not None and elem.text:
+            return elem.text.strip()
+        return None
+    
+    #If patent is none:
+    if patent is None:
+        print("No <Patent Element> Found")
+        return None
 
-    return {
-        "patent_id": int(safe(patent.find("pat:PatentNumber", ns))),
-        "patent_title": safe(patent.find("pat:PatentTitle", ns)),
-        "patent_status": safe(patent.find("pat:PatentCurrentStatusCode", ns)),
-        "expiry_date": safe(patent.find("pat:ExpiryDate", ns)),
-        "client_name": client_name
-    }
+    
+    
+    #Temporarily inspect XML structure  
+    print(root.tag)
 
+    for child in list(root.iter())[:20]:
+        print(child.tag, child.text)
+        
+        
+    #Extracting richer fields / #todo: change return to patent_data        
+    def extract(patent, tag):
+        for elem in patent.iter():
+            if elem.tag.endswith(tag) and elem.text:
+                return elem.text.strip()
+        return None
+    
+    def extract_inventor(patent):
+        inside_inventor = False
 
+        for elem in patent.iter():
+
+            if elem.tag.endswith("Inventor"):
+                inside_inventor = True
+
+            if inside_inventor and elem.tag.endswith("FreeFormatNameLine"):
+                if elem.text:
+                    return elem.text.strip()
+
+        return None    
+
+    patent_data = {
+    "title": extract(patent, "PatentTitle"),   # REQUIRED
+    "status": extract(patent, "PatentCurrentStatusCode"),
+    "filing_date": extract(patent, "CompleteFiledDate"),
+    "expiry_date": extract(patent, "ExpiryDate"),
+    "abstract": extract(patent, "PatentAbstract"),
+    "inventor_name": extract_inventor(patent),
+    "publication_date": extract(patent, "PublishedDate"),    
+    "raw_xml": xml_data
+    }   
+    return patent_data
 
 # -----------------------------
 # UPSERT INTO SUPABASE
 # -----------------------------
+
 def upsert_to_supabase(data):
     url = f"{SUPABASE_URL}/rest/v1/patents"
+
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -87,10 +133,18 @@ def upsert_to_supabase(data):
         "Prefer": "resolution=merge-duplicates"
     }
 
-    response = requests.post(url, json=data, headers=headers)
-    print("Supabase:", response.status_code, response.text)
+    try:
+        response = requests.post(url, json=data, headers=headers)
 
+        print("Status:", response.status_code)
 
+        if response.status_code >= 400:
+            print("Supabase error:", response.text)
+
+        response.raise_for_status()
+
+    except requests.exceptions.RequestException as e:
+        print("Request failed:", e)
 # -----------------------------
 # PROCESS A SINGLE PATENT
 # -----------------------------
@@ -99,17 +153,25 @@ def process_patent(patent_number):
     if xml_data is None:
         return
     print(xml_data)
-
+    
     parsed = parse_patent_xml(xml_data)
-    print("Parsed:", parsed)
-    upsert_to_supabase(parsed)
+    if not parsed:
+        return
 
+    parsed["raw_xml"] = xml_data
+    upsert_to_supabase(parsed)
 
 # -----------------------------
 # RUN 1 PATENT FOR PRACTICE
 # -----------------------------
-test_ids = [510224]
-
+test_ids = range(510011, 510014)
 for pid in test_ids:
-    print(f"\nProcessing patent {pid}")
-    process_patent(pid)
+    try:
+        process_patent(pid)
+        print(f"\nProcessing patent {pid}")
+        time.sleep(2);
+    except Exception as e:
+        print("Error in processing")
+    
+
+    
