@@ -8,7 +8,6 @@ import xml.etree.ElementTree as ET
 
 #Load .env FileExistsError
 load_dotenv()
-
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
@@ -108,6 +107,7 @@ def parse_patent_xml(xml_data, client_name=None):
         return None    
 
     patent_data = {
+    "patent_id": extract(patent, "PatentNumber"),
     "title": extract(patent, "PatentTitle"),   # REQUIRED
     "status": extract(patent, "PatentCurrentStatusCode"),
     "filing_date": extract(patent, "CompleteFiledDate"),
@@ -164,7 +164,7 @@ def process_patent(patent_number):
 # -----------------------------
 # RUN 1 PATENT FOR PRACTICE
 # -----------------------------
-test_ids = range(510011, 510014)
+test_ids = range(83400, 83500)
 for pid in test_ids:
     try:
         process_patent(pid)
