@@ -1,0 +1,29 @@
+:root {
+  color-scheme: light;
+  font: 15px/1.5 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: auto;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(150deg, #0c1f36 0%, #163b57 32%, #256e86 62%, #4fa8bb 100%);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
