@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { FileSearch } from 'lucide-react'
+import { supabase } from '../lib/supabaseClient'
 
 function formatDate(value) {
   if (!value) return null
@@ -30,13 +32,33 @@ function Field({ label, value, className = '' }) {
 }
 
 export default function PatentDetail({ patent, loading }) {
-  if (loading) {
-    return (
-      <div className="card card--empty">
-        <p>Loading patent…</p>
-      </div>
-    )
-  }
+    const [classifications, setClassifications] = useState([])
+    const [classificationLoading, setClassificationLoading] = useState(false)
+
+    useEffect(() => {
+        const fetchClassifications = async () => {
+            if (!patent?.patent_id) {
+                setClassifications([])
+                return
+            }
+
+            setClassificationLoading(true)
+
+            const { data, error } = await supabase
+                .from('patent_classification')
+                .select('*')
+                .eq('patent_id', patent.patent_id)
+
+            if (error) {
+                console.error('Failed to fetch classifications:', error)
+            }
+
+            setClassifications(data || [])
+            setClassificationLoading(false)
+        }
+
+        fetchClassifications()
+    }, [patent?.patent_id])
 
   if (!patent) {
     return (
@@ -82,6 +104,33 @@ export default function PatentDetail({ patent, loading }) {
             <img className="abstract__image" src={patent.image_url} alt="Patent figure" />
           )}
         </span>
+
+        <div className="classification-section">
+          <span className="field__label">IPC Classification</span>
+
+          {classificationLoading ? (
+            <div className="classification-loading">Loading classifications…</div>
+          ) : classifications.length > 0 ? (
+            <div className="classification-list">
+              {classifications.map((classification, index) => (
+                <div className="classification-item" key={index}>
+                  <div className="classification-code">
+                    <strong>{classification.class || '—'}</strong>
+                    <span>{classification.subclass || '—'}</span>
+                  </div>
+
+                  {classification.ipc_group && (
+                    <span className="classification-group">{classification.ipc_group}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="field__box">
+              <span className="field__placeholder">No classification available.</span>
+            </div>
+          )}
+        </div>
       </label>
     </div>
   )
