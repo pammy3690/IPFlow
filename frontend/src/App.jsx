@@ -1,109 +1,87 @@
 import { useEffect, useState } from 'react'
-import Header from './components/Header'
-import SearchBar from './components/SearchBar'
-import StatusFilter from './components/StatusFilter'
-import PatentDetail from './components/PatentDetail'
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient'
-import './App.css'
+import { usePatentsOverview } from './hooks/usePatentsOverview'
+import { useSavedPatents } from './hooks/useSavedPatents'
+import WaveBackground from './design-system/WaveBackground.jsx'
+import Sidebar from './design-system/Sidebar.jsx'
+import TopBar from './design-system/TopBar.jsx'
+import SignInScreen from './screens/SignInScreen.jsx'
+import DashboardScreen from './screens/DashboardScreen.jsx'
+import SearchScreen from './screens/SearchScreen.jsx'
+import AnalyticsScreen from './screens/AnalyticsScreen.jsx'
+import CalendarScreen from './screens/CalendarScreen.jsx'
+import './design-system/tokens.css'
 
-// patent_id is a bigint identity column — ilike isn't valid on it, so it's
-// only searchable via an exact numeric match, not substring matching.
-const TEXT_SEARCH_COLUMNS = ['title', 'inventor_name', 'status']
-const RESULT_LIMIT = 8
+const TITLES = { overview: 'Dashboard', external: 'External patents', internal: 'Internal patents', comparison: 'Comparison', calendar: 'Calendar' }
 
 export default function App() {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [searchError, setSearchError] = useState(null)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-
-  const [statusOptions, setStatusOptions] = useState([])
-  const [statusFilter, setStatusFilter] = useState('All')
-
-  const [selectedPatent, setSelectedPatent] = useState(null)
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [session, setSession] = useState(null)
+  const [guest, setGuest] = useState(false)
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured)
+  const [section, setSection] = useState('overview')
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    supabase
-      .from('patents')
-      .select('status')
-      .then(({ data, error }) => {
-        if (error || !data) return
-        const unique = Array.from(new Set(data.map((row) => row.status).filter(Boolean))).sort()
-        setStatusOptions(unique)
-      })
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setAuthReady(true)
+    })
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => setSession(next))
+    return () => subscription.subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) return
-    const term = query.trim()
-    if (term === '') {
-      setResults([])
-      setSearchError(null)
-      setSearchLoading(false)
-      return
-    }
+  const signedIn = guest || Boolean(session)
+  const account = session?.user?.user_metadata?.organisation || session?.user?.email || 'there'
+  const scopeKey = session?.user?.id || (guest ? 'guest' : null)
 
-    setSearchLoading(true)
-    setSearchError(null)
+  const { patents, statuses, loading } = usePatentsOverview(signedIn)
+  const { savedIds, savePatent } = useSavedPatents(scopeKey)
 
-    const timeout = setTimeout(async () => {
-      const filters = TEXT_SEARCH_COLUMNS.map((col) => `${col}.ilike.%${term}%`)
-      if (/^\d+$/.test(term)) {
-        filters.push(`patent_id.eq.${term}`)
-      }
-      let request = supabase.from('patents').select('*').or(filters.join(','))
-      if (statusFilter !== 'All') {
-        request = request.eq('status', statusFilter)
-      }
-      const { data, error } = await request.limit(RESULT_LIMIT)
+  function openPatent(patent) {
+    setSelected(patent)
+    setSection('external')
+  }
 
-      if (error) {
-        setSearchError(error.message)
-        setResults([])
-      } else {
-        setResults(data ?? [])
-      }
-      setSearchLoading(false)
-    }, 300)
-
-    return () => clearTimeout(timeout)
-  }, [query, statusFilter])
-
-  function handleSelect(patent) {
-    setSelectedPatent(patent)
-    setQuery(patent.title || patent.patent_id || '')
-    setDropdownOpen(false)
+  function signOut() {
+    if (session) supabase.auth.signOut()
+    setGuest(false)
+    setSection('overview')
+    setSelected(null)
   }
 
   return (
-    <div className="page">
-      <Header />
-
-      <SearchBar
-        query={query}
-        onQueryChange={(value) => {
-          setQuery(value)
-          setDropdownOpen(true)
-        }}
-        results={results}
-        loading={searchLoading}
-        error={
-          !isSupabaseConfigured
-            ? 'Supabase is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-            : searchError
-        }
-        showResults={dropdownOpen && query.trim() !== ''}
-        onSelect={handleSelect}
-        onFocus={() => setDropdownOpen(true)}
-        onBlur={() => setDropdownOpen(false)}
-      />
-
-      <StatusFilter options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
-
-      <PatentDetail patent={selectedPatent} loading={detailLoading} />
+    <div data-ipf-theme="light" style={{ minHeight: '100%' }}>
+      <WaveBackground />
+      {!authReady ? null : !signedIn ? (
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <SignInScreen onGuest={() => setGuest(true)} />
+        </div>
+      ) : (
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', minHeight: '100%' }}>
+          <Sidebar active={section} onSelect={setSection} />
+          <main style={{ flex: '1 1 auto', minWidth: 0, padding: '28px 40px 64px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <TopBar title={TITLES[section]} account={account} onProfile={signOut} />
+            {section === 'overview' && (
+              <DashboardScreen
+                account={account}
+                patents={patents}
+                loading={loading}
+                savedIds={savedIds}
+                onSave={savePatent}
+                onOpen={openPatent}
+                onAdd={() => setSection('external')}
+                onOpenCalendar={() => setSection('calendar')}
+              />
+            )}
+            {(section === 'external' || section === 'comparison') && (
+              <SearchScreen statuses={statuses} selected={selected} onSelect={setSelected} savedIds={savedIds} onSave={savePatent} />
+            )}
+            {section === 'internal' && <AnalyticsScreen patents={patents} />}
+            {section === 'calendar' && <CalendarScreen account={account} patents={patents} onOpen={openPatent} />}
+          </main>
+        </div>
+      )}
     </div>
   )
 }

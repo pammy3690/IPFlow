@@ -1,6 +1,7 @@
 :root {
   color-scheme: light;
-  font: 15px/1.5 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -18,7 +19,9 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(150deg, #0c1f36 0%, #163b57 32%, #256e86 62%, #4fa8bb 100%);
+  background: #ffffff;
+  font-family: var(--ipf-font-sans, 'Segoe UI', Inter, system-ui, -apple-system, sans-serif);
+  color: var(--ipf-text-primary, #000000);
 }
 
 h1,

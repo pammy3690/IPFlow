@@ -1,0 +1,110 @@
+/* IPFlow design tokens — ported from the "IPFlow Design System" Claude Design
+   project (palette "Deep Blue Waters", 81C3D7 sky). Light theme only: this app
+   runs with [data-ipf-theme="light"] on the root element. */
+@import url("https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Ubuntu+Sans:ital,wght@0,100..800;1,100..800&display=swap");
+
+:root {
+  --ipf-navy: #16425b;
+  --ipf-ocean: #2f6690;
+  --ipf-blue: #3a7ca5;
+  --ipf-sky: #81c3d7;
+  --ipf-mist: #d9dcd6;
+
+  --ipf-white: #ffffff;
+  --ipf-ink: #0c1f36;
+
+  --ipf-status-granted: #4ade80;
+  --ipf-status-granted-tint: rgba(74, 222, 128, 0.22);
+  --ipf-status-granted-ink: #15803d;
+  --ipf-status-exam: #facc15;
+  --ipf-status-exam-tint: rgba(250, 204, 21, 0.22);
+  --ipf-status-exam-ink: #92650a;
+  --ipf-status-lapsed: #f87171;
+  --ipf-status-lapsed-tint: rgba(248, 113, 113, 0.22);
+  --ipf-status-lapsed-ink: #b91c1c;
+  --ipf-status-neutral-tint: rgba(22, 66, 91, 0.12);
+  --ipf-status-neutral-ink: #16425b;
+
+  /* light theme (Figma dashboard frame): white canvas, sky-tinted glass, dark type */
+  --ipf-surface-glass: rgba(129, 195, 215, 0.2);
+  --ipf-surface-glass-raised: rgba(129, 195, 215, 0.28);
+  --ipf-surface-field: rgba(120, 120, 128, 0.16);
+  --ipf-surface-menu: #ffffff;
+
+  --ipf-border-glass: rgba(22, 66, 91, 0.14);
+  --ipf-border-field: rgba(22, 66, 91, 0.12);
+  --ipf-border-strong: rgba(22, 66, 91, 0.35);
+
+  --ipf-text-primary: #000000;
+  --ipf-text-heading: #16425b;
+  --ipf-text-secondary: rgba(12, 31, 54, 0.75);
+  --ipf-text-muted: #727272;
+  --ipf-text-placeholder: #727272;
+  --ipf-text-danger: #c0392b;
+
+  --ipf-state-hover: rgba(22, 66, 91, 0.06);
+  --ipf-state-active: rgba(129, 195, 215, 0.35);
+
+  --ipf-shadow-search: 0 8px 30px rgba(4, 20, 36, 0.12);
+  --ipf-shadow-card: 0 20px 60px rgba(4, 20, 36, 0.14);
+  --ipf-shadow-menu: 0 16px 40px rgba(4, 12, 24, 0.16);
+  --ipf-blur-search: blur(14px);
+  --ipf-blur-menu: blur(16px);
+  --ipf-blur-card: blur(18px);
+
+  --ipf-font-display: "Syncopate", "Ubuntu Sans", system-ui, sans-serif;
+  --ipf-font-sans: "Ubuntu Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --ipf-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --ipf-type-h2-size: 24px;
+  --ipf-type-h3-size: 20px;
+  --ipf-type-body-size: 16px;
+  --ipf-type-sm-size: 14px;
+  --ipf-type-label-size: 13px;
+  --ipf-type-xs-size: 12px;
+  --ipf-type-wordmark-track: 4px;
+  --ipf-track-tight: -0.08px;
+  --ipf-line-relaxed: 1.6;
+
+  --ipf-space-1: 2px;
+  --ipf-space-2: 6px;
+  --ipf-space-3: 8px;
+  --ipf-space-4: 10px;
+  --ipf-space-5: 12px;
+  --ipf-space-7: 16px;
+  --ipf-space-9: 20px;
+  --ipf-space-10: 22px;
+  --ipf-card-pad-y: 40px;
+  --ipf-card-pad-x: 48px;
+  --ipf-field-pad: 9px 16px;
+  --ipf-search-pad: 14px 18px;
+  --ipf-max-content: 1040px;
+  --ipf-max-search: 760px;
+
+  --ipf-radius-sm: 12px;
+  --ipf-radius-md: 14px;
+  --ipf-radius-lg: 18px;
+  --ipf-radius-xl: 28px;
+  --ipf-radius-2xl: 40px;
+  --ipf-radius-pill: 999px;
+
+  --ipf-ease: ease;
+  --ipf-dur-fast: 0.15s;
+  --ipf-dur-spin: 0.9s;
+  --ipf-transition-surface: background var(--ipf-dur-fast) var(--ipf-ease), border-color var(--ipf-dur-fast) var(--ipf-ease);
+}
+
+@keyframes ipf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ipf-wave-drift {
+  from {
+    transform: translateX(-70px);
+  }
+  to {
+    transform: translateX(70px);
+  }
+}
