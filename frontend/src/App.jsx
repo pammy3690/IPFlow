@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient'
 import { usePatentsOverview } from './hooks/usePatentsOverview'
 import { useSavedPatents } from './hooks/useSavedPatents'
+import { useSavedPatentDetails } from './hooks/useSavedPatentDetails'
 import WaveBackground from './design-system/WaveBackground.jsx'
 import Sidebar from './design-system/Sidebar.jsx'
 import TopBar from './design-system/TopBar.jsx'
@@ -33,10 +34,10 @@ export default function App() {
 
   const signedIn = guest || Boolean(session)
   const account = session?.user?.user_metadata?.organisation || session?.user?.email || 'there'
-  const scopeKey = session?.user?.id || (guest ? 'guest' : null)
 
   const { patents, statuses, loading } = usePatentsOverview(signedIn)
-  const { savedIds, savePatent } = useSavedPatents(scopeKey)
+  const { savedIds, savePatent } = useSavedPatents(session?.user?.id ?? null)
+  const savedPatents = useSavedPatentDetails(savedIds)
 
   function openPatent(patent) {
     setSelected(patent)
@@ -66,6 +67,7 @@ export default function App() {
               <DashboardScreen
                 account={account}
                 patents={patents}
+                savedPatents={savedPatents}
                 loading={loading}
                 savedIds={savedIds}
                 onSave={savePatent}

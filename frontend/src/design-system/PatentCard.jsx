@@ -10,15 +10,16 @@ export default function PatentCard({ title = 'Untitled patent', patentId, status
         background: 'var(--ipf-surface-glass)', border: '1px solid var(--ipf-border-glass)',
         backdropFilter: 'var(--ipf-blur-card)', WebkitBackdropFilter: 'var(--ipf-blur-card)',
         boxShadow: 'var(--ipf-shadow-search)', color: 'var(--ipf-text-primary)', boxSizing: 'border-box',
+        overflow: 'hidden', position: 'relative',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--ipf-space-5)' }}>
-        <span style={{ fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-h3-size)', fontWeight: 600, lineHeight: 1.25 }}>{title}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ipf-space-3)', flex: '0 0 auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-3)' }}>
+        <span style={{ minWidth: 0, overflowWrap: 'anywhere', hyphens: 'auto', fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-sm-size)', fontWeight: 600, lineHeight: 1.4 }}>{title}</span>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--ipf-space-3)' }}>
           {status && <StatusPill status={status} />}
           {onSave && (
             <button
-              type="button" onClick={onSave} disabled={saved}
+              type="button" onClick={onSave} title={saved ? 'Remove from dashboard' : 'Save to dashboard'}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 'var(--ipf-space-2)',
                 padding: '5px 14px', borderRadius: 'var(--ipf-radius-pill)',
@@ -26,10 +27,10 @@ export default function PatentCard({ title = 'Untitled patent', patentId, status
                 background: saved ? 'var(--ipf-state-active)' : 'var(--ipf-surface-field)',
                 color: saved ? 'var(--ipf-text-heading)' : 'var(--ipf-text-secondary)',
                 fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-xs-size)', fontWeight: 600,
-                cursor: saved ? 'default' : 'pointer', transition: 'var(--ipf-transition-surface)',
+                cursor: 'pointer', transition: 'var(--ipf-transition-surface)',
               }}
             >
-              <Icon name={saved ? 'check' : 'bookmark-plus'} size={13} />
+              <Icon name={saved ? 'circle-x' : 'bookmark-plus'} size={13} />
               {saved ? 'Saved' : 'Save'}
             </button>
           )}

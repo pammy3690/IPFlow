@@ -5,10 +5,10 @@ import GlassPanel from '../design-system/GlassPanel.jsx'
 import MaintenanceTimeline from '../design-system/MaintenanceTimeline.jsx'
 import Button from '../design-system/Button.jsx'
 
-export default function DashboardScreen({ account, patents, loading, savedIds, onSave, onOpen, onAdd, onOpenCalendar }) {
-  const saved = patents.filter((p) => savedIds.includes(p.patent_id))
+export default function DashboardScreen({ account, patents, savedPatents, loading, savedIds, onSave, onOpen, onAdd, onOpenCalendar }) {
+  const saved = savedPatents
   const shown = saved.length ? saved : patents.slice(0, 2)
-  const upcoming = patents.filter((p) => p.expiry_date).slice(0, 3)
+  const upcoming = saved.filter((p) => p.expiry_date).slice(0, 3)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -48,7 +48,7 @@ export default function DashboardScreen({ account, patents, loading, savedIds, o
         {upcoming.length ? (
           <MaintenanceTimeline
             items={upcoming.map((p) => ({ id: p.patent_id, title: p.title, action: 'Renewal due', date: formatDate(p.expiry_date), status: p.status }))}
-            onSelect={(item) => onOpen(patents.find((p) => p.patent_id === item.id))}
+            onSelect={(item) => onOpen(saved.find((p) => p.patent_id === item.id))}
           />
         ) : (
           <span style={{ fontSize: 14, color: 'var(--ipf-text-secondary)' }}>No upcoming renewals on record.</span>

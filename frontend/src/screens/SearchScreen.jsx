@@ -83,11 +83,10 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
       {selected && (
         <Button
           variant={savedIds.includes(selected.patent_id) ? 'active' : 'solid'}
-          icon={savedIds.includes(selected.patent_id) ? 'check' : 'bookmark-plus'}
+          icon={savedIds.includes(selected.patent_id) ? 'circle-x' : 'bookmark-plus'}
           onClick={() => onSave(selected.patent_id)}
-          disabled={savedIds.includes(selected.patent_id)}
         >
-          {savedIds.includes(selected.patent_id) ? 'Saved to dashboard' : 'Save to dashboard'}
+          {savedIds.includes(selected.patent_id) ? 'Remove from dashboard' : 'Save to dashboard'}
         </Button>
       )}
 
