@@ -25,7 +25,7 @@ from JM_Practice import (
     SUPABASE_KEY,
 )
 
-BATCH_SIZE = 400  # 1.3k portfolio, hourly runs -> full portfolio cycles roughly every ~3-4 hours
+BATCH_SIZE = 1500  # weekly run, single pass covers the whole ~1.3k portfolio
 
 
 # ---------------------------------------------------------
