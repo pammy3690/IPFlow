@@ -1,11 +1,15 @@
 """
-Periodic update-checker: re-checks patents already in Supabase against
-IPONZ and upserts only what changed. Run on a schedule (GitHub Actions)
-separately from JM_Practice.py's run_until_saves() discovery crawler.
+Batched update-checker: each run only checks the N patents that were
+least recently checked, so ~1000 patents spread across several runs
+per day instead of one big burst.
+
+Requires a last_checked_at column on your Supabase `patents` table:
+  ALTER TABLE patents ADD COLUMN last_checked_at timestamptz;
 """
 
 import time
 import requests
+from datetime import datetime, timezone
 
 from JM_Practice import (
     fetch_patent_xml,
@@ -21,22 +25,69 @@ from JM_Practice import (
     SUPABASE_KEY,
 )
 
+BATCH_SIZE = 400  # 1.3k portfolio, hourly runs -> full portfolio cycles roughly every ~3-4 hours
+
 
 # ---------------------------------------------------------
-# FETCH EXISTING PATENT IDS + LAST KNOWN STATE
+# LOG A CHANGE TO patent_logs (id, patent_id, action, old_data, new_data, changed_at)
 # ---------------------------------------------------------
-def get_existing_patents():
-    """Pull patent_id, status, expiry_date for everything already stored."""
-    url = f"{SUPABASE_URL}/rest/v1/patents?select=patent_id,status,expiry_date"
+def log_change(patent_id, old_status, new_status, old_expiry, new_expiry):
+    url = f"{SUPABASE_URL}/rest/v1/patent_logs"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "patent_id": patent_id,
+        "action": "UPDATE",
+        "old_data": {"status": old_status, "expiry_date": old_expiry},
+        "new_data": {"status": new_status, "expiry_date": new_expiry},
+        "changed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    response = requests.post(url, json=data, headers=headers)
+    if response.status_code not in (200, 201):
+        print("❌ Failed to log change:", response.text)
+
+
+# ---------------------------------------------------------
+# FETCH THE LEAST-RECENTLY-CHECKED BATCH
+# ---------------------------------------------------------
+def get_batch_to_check(batch_size=BATCH_SIZE):
+    """
+    Pull the batch_size patents with the oldest last_checked_at
+    (nulls first, so newly added patents get checked before anything else).
+    """
+    url = (
+        f"{SUPABASE_URL}/rest/v1/patents"
+        f"?select=patent_id,status,expiry_date,last_checked_at"
+        f"&order=last_checked_at.asc.nullsfirst"
+        f"&limit={batch_size}"
+    )
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
     }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print("❌ Failed to fetch existing patents:", response.text)
+        print("❌ Failed to fetch batch:", response.text)
         return []
     return response.json()
+
+
+# ---------------------------------------------------------
+# MARK A PATENT AS CHECKED (even if nothing changed)
+# ---------------------------------------------------------
+def mark_checked(patent_id):
+    url = f"{SUPABASE_URL}/rest/v1/patents?patent_id=eq.{patent_id}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+    }
+    data = {"last_checked_at": datetime.now(timezone.utc).isoformat()}
+    requests.patch(url, json=data, headers=headers)
 
 
 # ---------------------------------------------------------
@@ -76,20 +127,16 @@ def fetch_with_backoff(patent_number, max_retries=5):
 
 
 # ---------------------------------------------------------
-# MAIN UPDATE-CHECK PASS
+# CHECK ONE BATCH
 # ---------------------------------------------------------
-def check_existing_for_updates(sleep_seconds=1.5):
-    """
-    Re-fetch every patent already in Supabase and upsert only if
-    status or expiry_date changed since our last stored copy.
-    """
-    existing = get_existing_patents()
-    print(f"🔎 Checking {len(existing)} existing patents for updates")
+def check_batch_for_updates(sleep_seconds=1.5, batch_size=BATCH_SIZE):
+    batch = get_batch_to_check(batch_size)
+    print(f"🔎 Checking a batch of {len(batch)} patents")
 
     changed = 0
     checked = 0
 
-    for row in existing:
+    for row in batch:
         patent_number = row["patent_id"]
         old_status = row.get("status")
         old_expiry = row.get("expiry_date")
@@ -120,15 +167,17 @@ def check_existing_for_updates(sleep_seconds=1.5):
             upsert_maintenance_events(parsed)
             upsert_classifications(parsed)
             upsert_associated_patents(parsed)
+            log_change(patent_number, old_status, new_status, old_expiry, new_expiry)
             changed += 1
         else:
             print(f"✅ No change: {patent_number}")
 
+        mark_checked(patent_number)
         time.sleep(sleep_seconds)
 
-    print(f"🎉 Update check complete — checked {checked}, {changed} changed")
+    print(f"🎉 Batch complete — checked {checked}, {changed} changed")
     return changed
 
 
 if __name__ == "__main__":
-    check_existing_for_updates()
+    check_batch_for_updates()
