@@ -1,7 +1,7 @@
-from multiprocessing.dummy.connection import families
+#from multiprocessing.dummy.connection import families
 import time
 import os
-from tkinter.font import families
+#from tkinter.font import families
 from pandas import unique
 import requests
 import xml.etree.ElementTree as ET
@@ -604,9 +604,9 @@ def ingest_related_patents(parsed):
 
 
 # ---------------------------------------------------------
-# BULK RUNNER
+# BULK RUNNER - Ready to (start at 788600 this time)
 # ---------------------------------------------------------
-def run_until_saves(start=786100, target_saves=20):
+def run_until_saves(start=788600, target_saves=200):
     print(f"🚀 Starting batch — stopping after {target_saves} successful inserts")
 
     saves = 0
@@ -654,7 +654,7 @@ def run_until_saves(start=786100, target_saves=20):
 # MAIN ENTRY POINT
 # ---------------------------------------------------------
 if __name__ == "__main__":
-    run_until_saves(start=786100, target_saves=20)
+    run_until_saves(start=788600, target_saves=200)
 
 # ---------------------------------------------------------
 # TEST MODE
