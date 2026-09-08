@@ -311,7 +311,7 @@ def parse_patent_xml(xml_data):
         "parent_patents": extract_parent_patent(),
     }
 
-    print("DEBUG PARSED:", parsed)
+    print("DEBUG PARSED:", parsed.get("patent_id"), parsed.get("status"))
     return parsed
 
 # ---------------------------------------------------------
