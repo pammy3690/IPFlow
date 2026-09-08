@@ -72,7 +72,7 @@ def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
 
     start_of_today = datetime.now(timezone.utc).replace(
         hour=0, minute=0, second=0, microsecond=0
-    ).isoformat()
+    ).isoformat().replace("+00:00", "Z")
 
     all_rows = []
     offset = 0
