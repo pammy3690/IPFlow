@@ -56,15 +56,23 @@ def log_change(patent_id, old_status, new_status, old_expiry, new_expiry):
 # ---------------------------------------------------------
 def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
     """
-    Pulls up to total_size patents ordered by oldest last_checked_at
-    first (nulls first), fetching in pages of page_size since Supabase
-    caps a single request's response at 1000 rows regardless of the
-    limit= you ask for.
+    Pulls up to total_size patents that have NOT been checked yet today
+    (last_checked_at is null, or from before today), oldest first.
+    Fetches in pages of page_size since Supabase caps a single request's
+    response at 1000 rows regardless of the limit= you ask for.
+
+    Once every patent has a last_checked_at from today, this returns an
+    empty list — so re-running the workflow again the same day does
+    nothing instead of re-checking everyone.
     """
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
     }
+
+    start_of_today = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ).isoformat()
 
     all_rows = []
     offset = 0
@@ -76,6 +84,7 @@ def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
         url = (
             f"{SUPABASE_URL}/rest/v1/patents"
             f"?select=patent_id,status,expiry_date,last_checked_at"
+            f"&or=(last_checked_at.is.null,last_checked_at.lt.{start_of_today})"
             f"&order=last_checked_at.asc.nullsfirst"
             f"&limit={this_page_size}"
             f"&offset={offset}"
@@ -88,7 +97,7 @@ def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
 
         page = response.json()
         if not page:
-            # No more rows left in the table
+            # No more rows left that qualify (either done, or none left today)
             break
 
         all_rows.extend(page)
@@ -97,7 +106,6 @@ def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
         print(f"📄 Fetched page: {len(page)} rows (total so far: {len(all_rows)})")
 
         if len(page) < this_page_size:
-            # Got fewer rows than asked for — we've reached the end of the table
             break
 
     return all_rows
