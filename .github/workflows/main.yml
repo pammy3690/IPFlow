@@ -1,0 +1,32 @@
+name: IPONZ patent update check
+
+on:
+  schedule:
+    # Runs Tuesday and Thursday, 5:00 UTC = 5pm NZST.
+    # NZ switches to NZDT (UTC+13) in late Sept — during NZDT this becomes 6pm NZ time.
+    # Cron day-of-week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat.
+    - cron: "0 5 * * 2,4"
+  workflow_dispatch: {}   # lets you trigger a manual run from the Actions tab
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # ~1.3k patents at 1.5s/request ≈ 32 min, plus headroom for backoff
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run batched update check
+        env:
+          GATEWAY_API: ${{ secrets.GATEWAY_API }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python check_updates.py
