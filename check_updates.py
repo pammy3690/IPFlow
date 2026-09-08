@@ -1,7 +1,7 @@
 """
-Batched update-checker: each run only checks the N patents that were
-least recently checked, so ~1000 patents spread across several runs
-per day instead of one big burst.
+Batched update-checker: each run checks the least-recently-checked
+patents first. Pulls results in pages (Supabase caps a single request
+at 1000 rows), so the full portfolio gets covered even past 1000 patents.
 
 Requires a last_checked_at column on your Supabase `patents` table:
   ALTER TABLE patents ADD COLUMN last_checked_at timestamptz;
@@ -25,7 +25,8 @@ from JM_Practice import (
     SUPABASE_KEY,
 )
 
-BATCH_SIZE = 1500  # weekly run, single pass covers the whole ~1.3k portfolio
+BATCH_SIZE = 1500        # how many patents you want checked total per run
+PAGE_SIZE = 1000         # Supabase's per-request cap — do not raise this
 
 
 # ---------------------------------------------------------
@@ -45,34 +46,61 @@ def log_change(patent_id, old_status, new_status, old_expiry, new_expiry):
         "new_data": {"status": new_status, "expiry_date": new_expiry},
         "changed_at": datetime.now(timezone.utc).isoformat(),
     }
-    response = requests.post(url, json=data, headers=headers)
+    response = requests.post(url, json=data, headers=headers, timeout=30)
     if response.status_code not in (200, 201):
         print("❌ Failed to log change:", response.text)
 
 
 # ---------------------------------------------------------
-# FETCH THE LEAST-RECENTLY-CHECKED BATCH
+# FETCH THE LEAST-RECENTLY-CHECKED BATCH, PAGE BY PAGE
 # ---------------------------------------------------------
-def get_batch_to_check(batch_size=BATCH_SIZE):
+def get_batch_to_check(total_size=BATCH_SIZE, page_size=PAGE_SIZE):
     """
-    Pull the batch_size patents with the oldest last_checked_at
-    (nulls first, so newly added patents get checked before anything else).
+    Pulls up to total_size patents ordered by oldest last_checked_at
+    first (nulls first), fetching in pages of page_size since Supabase
+    caps a single request's response at 1000 rows regardless of the
+    limit= you ask for.
     """
-    url = (
-        f"{SUPABASE_URL}/rest/v1/patents"
-        f"?select=patent_id,status,expiry_date,last_checked_at"
-        f"&order=last_checked_at.asc.nullsfirst"
-        f"&limit={batch_size}"
-    )
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
     }
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        print("❌ Failed to fetch batch:", response.text)
-        return []
-    return response.json()
+
+    all_rows = []
+    offset = 0
+
+    while len(all_rows) < total_size:
+        remaining = total_size - len(all_rows)
+        this_page_size = min(page_size, remaining)
+
+        url = (
+            f"{SUPABASE_URL}/rest/v1/patents"
+            f"?select=patent_id,status,expiry_date,last_checked_at"
+            f"&order=last_checked_at.asc.nullsfirst"
+            f"&limit={this_page_size}"
+            f"&offset={offset}"
+        )
+        response = requests.get(url, headers=headers, timeout=30)
+
+        if response.status_code != 200:
+            print(f"❌ Failed to fetch page at offset {offset}:", response.text)
+            break
+
+        page = response.json()
+        if not page:
+            # No more rows left in the table
+            break
+
+        all_rows.extend(page)
+        offset += len(page)
+
+        print(f"📄 Fetched page: {len(page)} rows (total so far: {len(all_rows)})")
+
+        if len(page) < this_page_size:
+            # Got fewer rows than asked for — we've reached the end of the table
+            break
+
+    return all_rows
 
 
 # ---------------------------------------------------------
@@ -87,7 +115,7 @@ def mark_checked(patent_id):
         "Prefer": "return=minimal",
     }
     data = {"last_checked_at": datetime.now(timezone.utc).isoformat()}
-    requests.patch(url, json=data, headers=headers)
+    requests.patch(url, json=data, headers=headers, timeout=30)
 
 
 # ---------------------------------------------------------
@@ -98,7 +126,7 @@ def fetch_with_backoff(patent_number, max_retries=5):
 
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, headers=HEADERS)
+            response = requests.get(url, headers=HEADERS, timeout=30)
         except requests.exceptions.RequestException as e:
             print(f"❌ Request failed for {patent_number}: {e}")
             return None
@@ -129,8 +157,8 @@ def fetch_with_backoff(patent_number, max_retries=5):
 # ---------------------------------------------------------
 # CHECK ONE BATCH
 # ---------------------------------------------------------
-def check_batch_for_updates(sleep_seconds=1.5, batch_size=BATCH_SIZE):
-    batch = get_batch_to_check(batch_size)
+def check_batch_for_updates(sleep_seconds=1.5, total_size=BATCH_SIZE):
+    batch = get_batch_to_check(total_size)
     print(f"🔎 Checking a batch of {len(batch)} patents")
 
     changed = 0
