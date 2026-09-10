@@ -66,7 +66,6 @@ export default function App() {
             {section === 'overview' && (
               <DashboardScreen
                 account={account}
-                patents={patents}
                 savedPatents={savedPatents}
                 loading={loading}
                 savedIds={savedIds}

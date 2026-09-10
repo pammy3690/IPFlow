@@ -14,6 +14,7 @@ export default function Sidebar({ items = IPFLOW_NAV, active = 'overview', onSel
     <nav
       style={{
         width, flex: `0 0 ${typeof width === 'number' ? width + 'px' : width}`, boxSizing: 'border-box',
+        position: 'sticky', top: 0, alignSelf: 'flex-start', height: '100vh', overflowY: 'auto',
         display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-9)',
         padding: '24px var(--ipf-space-7)',
         background: 'var(--ipf-surface-glass)', borderRight: '1px solid var(--ipf-border-glass)',

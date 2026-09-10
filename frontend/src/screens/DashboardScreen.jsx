@@ -5,9 +5,9 @@ import GlassPanel from '../design-system/GlassPanel.jsx'
 import MaintenanceTimeline from '../design-system/MaintenanceTimeline.jsx'
 import Button from '../design-system/Button.jsx'
 
-export default function DashboardScreen({ account, patents, savedPatents, loading, savedIds, onSave, onOpen, onAdd, onOpenCalendar }) {
+export default function DashboardScreen({ account, savedPatents, loading, savedIds, onSave, onOpen, onAdd, onOpenCalendar }) {
   const saved = savedPatents
-  const shown = saved.length ? saved : patents.slice(0, 2)
+  const shown = saved
   const upcoming = saved.filter((p) => p.expiry_date).slice(0, 3)
 
   return (

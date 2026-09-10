@@ -5,7 +5,6 @@ import GlassPanel from './GlassPanel.jsx'
 import Field from './Field.jsx'
 import StatusPill from './StatusPill.jsx'
 import ClassificationItem from './ClassificationItem.jsx'
-import Icon from './Icon.jsx'
 
 export default function PatentDetail({ patent }) {
   const [classifications, setClassifications] = useState([])
@@ -31,14 +30,7 @@ export default function PatentDetail({ patent }) {
     return () => { live = false }
   }, [patent?.patent_id])
 
-  if (!patent) {
-    return (
-      <GlassPanel style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 'var(--ipf-space-5)', minHeight: 320, width: '100%', maxWidth: 'var(--ipf-max-content)', color: 'var(--ipf-text-secondary)' }}>
-        <Icon name="file-search" size={36} color="var(--ipf-text-muted)" />
-        <p style={{ margin: 0 }}>Search for a patent above to see its details here.</p>
-      </GlassPanel>
-    )
-  }
+  if (!patent) return null
 
   return (
     <GlassPanel style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-10)', width: '100%', maxWidth: 'var(--ipf-max-content)' }}>
