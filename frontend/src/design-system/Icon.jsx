@@ -1,7 +1,7 @@
 import {
   Search, Mic, Loader2, BookMarked, LayoutDashboard, Globe, Building2, Columns2,
   Calendar, Menu, SquareUserRound, ArrowUpRight, BookmarkPlus, Check, CalendarClock,
-  Plus, ShieldCheck, FileSearch, CircleX,
+  Plus, ShieldCheck, FileSearch, CircleX, Download,
 } from 'lucide-react'
 
 // Every icon name used across the IPFlow design system, statically imported
@@ -26,6 +26,7 @@ const ICONS = {
   'shield-check': ShieldCheck,
   'file-search': FileSearch,
   'circle-x': CircleX,
+  download: Download,
 }
 
 export default function Icon({ name = 'search', size = 20, color = 'currentColor', title, strokeWidth, style, ...rest }) {

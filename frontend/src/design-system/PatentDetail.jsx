@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatDate } from '../lib/formatDate.js'
+import { fetchIpcTitleMap, resolveIpcTitle } from '../lib/ipcTitles.js'
 import GlassPanel from './GlassPanel.jsx'
 import Field from './Field.jsx'
 import StatusPill from './StatusPill.jsx'
@@ -21,10 +22,13 @@ export default function PatentDetail({ patent }) {
       .from('patent_classification')
       .select('*')
       .eq('patent_id', patent.patent_id)
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!live) return
         if (error) console.error('Failed to fetch classifications:', error)
-        setClassifications(data || [])
+        const rows = data || []
+        const titleMap = await fetchIpcTitleMap(rows)
+        if (!live) return
+        setClassifications(rows.map((c) => ({ ...c, title: resolveIpcTitle(c, titleMap) })))
         setClassificationLoading(false)
       })
     return () => { live = false }
@@ -52,7 +56,7 @@ export default function PatentDetail({ patent }) {
           <div style={{ padding: 'var(--ipf-field-pad)', color: 'var(--ipf-text-muted)', fontSize: 'var(--ipf-type-sm-size)' }}>Loading classifications…</div>
         ) : classifications.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-3)' }}>
-            {classifications.map((c, i) => <ClassificationItem key={i} code={c.class} subclass={c.subclass} group={c.ipc_group} />)}
+            {classifications.map((c, i) => <ClassificationItem key={i} code={c.class} subclass={c.subclass} group={c.ipc_group} title={c.title} />)}
           </div>
         ) : (
           <div style={{ padding: 'var(--ipf-field-pad)', minHeight: 40, display: 'flex', alignItems: 'center', borderRadius: 'var(--ipf-radius-md)', background: 'var(--ipf-surface-field)', border: '1px solid var(--ipf-border-field)' }}>

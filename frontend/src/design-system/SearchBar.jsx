@@ -1,10 +1,14 @@
 import Icon from './Icon.jsx'
+import Button from './Button.jsx'
 
 function displayTitle(patent) {
   return patent.title || patent.patent_id || 'Untitled patent'
 }
 
-export default function SearchBar({ query = '', onQueryChange, results = [], loading, error, showResults, onSelect, onFocus, onBlur, placeholder = 'Search patents' }) {
+export default function SearchBar({
+  query = '', onQueryChange, results = [], loading, error, showResults, onSelect, onFocus, onBlur, placeholder = 'Search patents',
+  canFetchLive = false, fetchingLive = false, fetchLiveError = null, onFetchLive,
+}) {
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: 'var(--ipf-max-search)' }}>
       <div
@@ -42,7 +46,21 @@ export default function SearchBar({ query = '', onQueryChange, results = [], loa
         >
           {error && <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-danger)' }}>{error}</div>}
           {!error && !loading && results.length === 0 && query.trim() !== '' && (
-            <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>No patents found for “{query}”.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-3)', padding: '12px 14px' }}>
+              <span style={{ fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>No patents found for “{query}”.</span>
+              {canFetchLive && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-2)', alignItems: 'flex-start' }}>
+                  <Button
+                    size="sm" variant="solid" icon={fetchingLive ? 'loader-2' : 'download'}
+                    disabled={fetchingLive}
+                    onMouseDown={(e) => { e.preventDefault(); onFetchLive && onFetchLive() }}
+                  >
+                    {fetchingLive ? 'Fetching from IPONZ…' : `Fetch patent #${query.trim()} from IPONZ`}
+                  </Button>
+                  {fetchLiveError && <span style={{ fontSize: 'var(--ipf-type-xs-size)', color: 'var(--ipf-text-danger)' }}>{fetchLiveError}</span>}
+                </div>
+              )}
+            </div>
           )}
           {!error && results.map((p) => (
             <button

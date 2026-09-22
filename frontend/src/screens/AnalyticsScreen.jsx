@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js'
+import { fetchIpcTitleMap, resolveIpcTitle } from '../lib/ipcTitles.js'
 import GlassPanel from '../design-system/GlassPanel.jsx'
 import TrendBars from '../design-system/TrendBars.jsx'
 import CategoryDonut from '../design-system/CategoryDonut.jsx'
@@ -31,7 +32,7 @@ export default function AnalyticsScreen({ patents }) {
   useEffect(() => {
     if (!isSupabaseConfigured) return
     let live = true
-    supabase.from('patent_classification').select('class').then(({ data, error }) => {
+    supabase.from('patent_classification').select('class').then(async ({ data, error }) => {
       if (!live) return
       if (error || !data) {
         setClassifications([])
@@ -40,7 +41,10 @@ export default function AnalyticsScreen({ patents }) {
       }
       const counts = {}
       data.forEach((row) => { if (row.class) counts[row.class] = (counts[row.class] || 0) + 1 })
-      setClassifications(Object.entries(counts).map(([label, value]) => ({ label, value })))
+      const rows = Object.entries(counts).map(([label, value]) => ({ label, value, class: label, section: label[0] }))
+      const titleMap = await fetchIpcTitleMap(rows)
+      if (!live) return
+      setClassifications(rows.map((r) => ({ ...r, title: resolveIpcTitle(r, titleMap) })))
       setLoading(false)
     })
     return () => { live = false }

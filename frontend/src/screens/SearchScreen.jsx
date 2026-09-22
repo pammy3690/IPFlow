@@ -32,6 +32,8 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
   const [statusList, setStatusList] = useState([])
   const [statusListLoading, setStatusListLoading] = useState(false)
   const [statusListError, setStatusListError] = useState(null)
+  const [fetchingLive, setFetchingLive] = useState(false)
+  const [fetchLiveError, setFetchLiveError] = useState(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -45,6 +47,7 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
 
     setSearchLoading(true)
     setSearchError(null)
+    setFetchLiveError(null)
 
     const timeout = setTimeout(async () => {
       const filters = TEXT_SEARCH_COLUMNS.map((col) => `${col}.ilike.%${term}%`)
@@ -124,6 +127,30 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
     setDropdownOpen(false)
   }
 
+  async function handleFetchLive() {
+    const patentId = query.trim()
+    setFetchingLive(true)
+    setFetchLiveError(null)
+    const { data, error } = await supabase.functions.invoke('fetch-patent', { body: { patent_id: patentId } })
+    setFetchingLive(false)
+    if (error) {
+      let message = error.message || 'Failed to fetch patent from IPONZ.'
+      if (typeof error.context?.json === 'function') {
+        try {
+          const body = await error.context.json()
+          if (body?.error) message = body.error
+        } catch { /* keep default message */ }
+      }
+      setFetchLiveError(message)
+      return
+    }
+    if (data?.patent) {
+      handleSelect(data.patent)
+    } else {
+      setFetchLiveError('Patent not found in IPONZ.')
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 36 }}>
       <SearchBar
@@ -140,6 +167,10 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
         onSelect={handleSelect}
         onFocus={() => setDropdownOpen(true)}
         onBlur={() => setDropdownOpen(false)}
+        canFetchLive={isSupabaseConfigured && !searchLoading && !searchError && results.length === 0 && /^\d+$/.test(query.trim())}
+        fetchingLive={fetchingLive}
+        fetchLiveError={fetchLiveError}
+        onFetchLive={handleFetchLive}
       />
 
       <StatusFilter options={statuses} value={statusFilter} onChange={handleStatusChange} />
