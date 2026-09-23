@@ -25,14 +25,22 @@ function buildRenewalTrend(patents) {
   return buckets
 }
 
-export default function AnalyticsScreen({ patents }) {
+export default function AnalyticsScreen({ patents, savedPatents }) {
   const [classifications, setClassifications] = useState([])
   const [loading, setLoading] = useState(isSupabaseConfigured)
 
+  const savedIds = savedPatents.map((p) => p.patent_id)
+  const savedIdsKey = savedIds.join(',')
+
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured || !savedIds.length) {
+      setClassifications([])
+      setLoading(false)
+      return
+    }
     let live = true
-    supabase.from('patent_classification').select('class').then(async ({ data, error }) => {
+    setLoading(true)
+    supabase.from('patent_classification').select('class,patent_id').in('patent_id', savedIds).then(async ({ data, error }) => {
       if (!live) return
       if (error || !data) {
         setClassifications([])
@@ -48,9 +56,9 @@ export default function AnalyticsScreen({ patents }) {
       setLoading(false)
     })
     return () => { live = false }
-  }, [])
+  }, [savedIdsKey])
 
-  const counts = patents.reduce((acc, p) => {
+  const counts = savedPatents.reduce((acc, p) => {
     if (!p.status) return acc
     acc[p.status] = (acc[p.status] || 0) + 1
     return acc

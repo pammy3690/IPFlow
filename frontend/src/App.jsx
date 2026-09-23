@@ -13,7 +13,7 @@ import AnalyticsScreen from './screens/AnalyticsScreen.jsx'
 import CalendarScreen from './screens/CalendarScreen.jsx'
 import './design-system/tokens.css'
 
-const TITLES = { overview: 'Dashboard', external: 'External patents', internal: 'Internal patents', comparison: 'Comparison', calendar: 'Calendar' }
+const TITLES = { overview: 'Dashboard', external: 'External patents', internal: 'Internal patents', calendar: 'Calendar' }
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -75,10 +75,10 @@ export default function App() {
                 onOpenCalendar={() => setSection('calendar')}
               />
             )}
-            {(section === 'external' || section === 'comparison') && (
+            {section === 'external' && (
               <SearchScreen statuses={statuses} selected={selected} onSelect={setSelected} savedIds={savedIds} onSave={savePatent} />
             )}
-            {section === 'internal' && <AnalyticsScreen patents={patents} />}
+            {section === 'internal' && <AnalyticsScreen patents={patents} savedPatents={savedPatents} />}
             {section === 'calendar' && <CalendarScreen account={account} patents={patents} onOpen={openPatent} />}
           </main>
         </div>

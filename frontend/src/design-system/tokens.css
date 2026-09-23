@@ -99,12 +99,3 @@
     transform: rotate(360deg);
   }
 }
-
-@keyframes ipf-wave-drift {
-  from {
-    transform: translateX(-70px);
-  }
-  to {
-    transform: translateX(70px);
-  }
-}

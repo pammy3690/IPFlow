@@ -5,7 +5,6 @@ export const IPFLOW_NAV = [
   { id: 'overview', label: 'Overview', icon: 'layout-dashboard' },
   { id: 'external', label: 'External', icon: 'globe' },
   { id: 'internal', label: 'Internal', icon: 'building-2' },
-  { id: 'comparison', label: 'Comparison', icon: 'columns-2' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
 ]
 
