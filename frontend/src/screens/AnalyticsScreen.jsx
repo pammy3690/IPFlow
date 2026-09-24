@@ -76,7 +76,7 @@ export default function AnalyticsScreen({ patents, savedPatents }) {
           {loading ? (
             <span style={{ fontSize: 14, color: 'var(--ipf-text-secondary)' }}>Loading classifications…</span>
           ) : (
-            <CategoryDonut label="IPC classification spread of the portfolio" data={classifications} />
+            <CategoryDonut label="IPC classification spread of the portfolio" data={classifications} patentCount={savedIds.length} />
           )}
         </GlassPanel>
         <GlassPanel padding={28} radius={28} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

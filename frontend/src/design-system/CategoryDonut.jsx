@@ -1,7 +1,11 @@
 const RAMP = ['var(--ipf-sky)', 'var(--ipf-blue)', 'var(--ipf-ocean)', 'var(--ipf-navy)', 'var(--ipf-mist)']
 
-export default function CategoryDonut({ data = [], size = 168, thickness = 26, label }) {
+// `data` values are classification counts, which can exceed the patent count
+// (a patent can carry several IPC classes) — pass `patentCount` so the center
+// figure shows the actual portfolio size instead of that inflated sum.
+export default function CategoryDonut({ data = [], size = 168, thickness = 26, label, patentCount }) {
   const total = data.reduce((s, d) => s + d.value, 0) || 1
+  const centerCount = patentCount ?? total
   const radius = (size - thickness) / 2
   const circumference = 2 * Math.PI * radius
 
@@ -34,7 +38,7 @@ export default function CategoryDonut({ data = [], size = 168, thickness = 26, l
           )}
         </svg>
         <div style={{ position: 'absolute', inset: thickness, borderRadius: '50%', background: 'var(--ipf-surface-menu)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ipf-text-primary)', pointerEvents: 'none' }}>
-          <span style={{ fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-h2-size)', fontWeight: 600 }}>{data.length ? total : 0}</span>
+          <span style={{ fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-h2-size)', fontWeight: 600 }}>{centerCount}</span>
           <span style={{ fontSize: 'var(--ipf-type-xs-size)', color: 'var(--ipf-text-muted)' }}>patents</span>
         </div>
       </div>
