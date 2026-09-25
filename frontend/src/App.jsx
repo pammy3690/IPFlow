@@ -44,7 +44,7 @@ export default function App() {
   const signedIn = guest || Boolean(session)
   const account = session?.user?.user_metadata?.name || session?.user?.user_metadata?.organisation || session?.user?.email || 'there'
 
-  const { patents, statuses, loading } = usePatentsOverview(signedIn)
+  const { statuses, loading } = usePatentsOverview(signedIn)
   const { savedIds, savePatent } = useSavedPatents(session?.user?.id ?? null)
   const savedPatents = useSavedPatentDetails(savedIds)
 
@@ -110,7 +110,7 @@ export default function App() {
             {section === 'external' && (
               <SearchScreen statuses={statuses} selected={selected} onSelect={setSelected} savedIds={savedIds} onSave={savePatent} />
             )}
-            {section === 'internal' && <AnalyticsScreen patents={patents} savedPatents={savedPatents} />}
+            {section === 'internal' && <AnalyticsScreen savedPatents={savedPatents} />}
             {section === 'calendar' && <CalendarScreen account={account} patents={savedPatents} onOpen={openPatent} />}
           </main>
         </div>

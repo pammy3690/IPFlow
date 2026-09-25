@@ -25,7 +25,7 @@ function buildRenewalTrend(patents) {
   return buckets
 }
 
-export default function AnalyticsScreen({ patents, savedPatents }) {
+export default function AnalyticsScreen({ savedPatents }) {
   const [classifications, setClassifications] = useState([])
   const [loading, setLoading] = useState(isSupabaseConfigured)
 
@@ -63,7 +63,7 @@ export default function AnalyticsScreen({ patents, savedPatents }) {
     acc[p.status] = (acc[p.status] || 0) + 1
     return acc
   }, {})
-  const renewals = buildRenewalTrend(patents)
+  const renewals = buildRenewalTrend(savedPatents)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
