@@ -127,6 +127,15 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
     setDropdownOpen(false)
   }
 
+  async function handleSelectAssociated(patentId) {
+    const { data, error } = await supabase.from('patents').select('*').eq('patent_id', patentId).maybeSingle()
+    if (error) {
+      console.error('Failed to load associated patent:', error)
+      return
+    }
+    if (data) handleSelect(data)
+  }
+
   async function handleFetchLive() {
     const patentId = query.trim()
     setFetchingLive(true)
@@ -236,7 +245,7 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
         </Button>
       )}
 
-      <PatentDetail patent={selected} />
+      <PatentDetail patent={selected} onSelect={handleSelectAssociated} />
     </div>
   )
 }
