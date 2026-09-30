@@ -1,0 +1,10 @@
+.DS_Store
+venv
+machine classification.ipynb
+api.py
+settings.json
+node_modules
+JM_Practice.py
+.vscode
+patent_sync.py
+supabase/.temp

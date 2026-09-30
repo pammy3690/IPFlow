@@ -164,7 +164,7 @@ def process_patent(patent_number):
 # -----------------------------
 # RUN 1 PATENT FOR PRACTICE
 # -----------------------------
-test_ids = range(83400, 83500)
+test_ids = range(83501, 83502)
 for pid in test_ids:
     try:
         process_patent(pid)

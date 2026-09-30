@@ -7,7 +7,8 @@ load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
 
-patent_number = "534567"
+patent_number = "510224"
+
 
 url = f"https://api.business.govt.nz/sandbox/intellectual-property-office-nz/v5/patent/{patent_number}"
 
