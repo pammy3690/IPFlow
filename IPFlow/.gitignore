@@ -24,4 +24,7 @@ dist-ssr
 *.sw?
 .env
 
+# Supabase CLI local cache
+supabase/.temp
+
 

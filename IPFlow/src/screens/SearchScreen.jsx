@@ -34,9 +34,6 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
   const [statusListError, setStatusListError] = useState(null)
   const [fetchingLive, setFetchingLive] = useState(false)
   const [fetchLiveError, setFetchLiveError] = useState(null)
-  const [associated, setAssociated] = useState([])
-  const [associatedLoading, setAssociatedLoading] = useState(false)
-  const [associatedError, setAssociatedError] = useState(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -112,65 +109,6 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
     return () => { live = false }
   }, [statusFilter, filterTouched, expirySoon, expiryDays])
 
-  useEffect(() => {
-  if (!isSupabaseConfigured || !selected?.patent_id) {
-    setAssociated([])
-    setAssociatedError(null)
-    return
-  }
-  let live = true
-  setAssociatedLoading(true)
-  setAssociatedError(null)
-
-  ;(async () => {
-    const { data: links, error: linkError } = await supabase
-      .from('patent_associations')
-      .select('associated_patent_id, association_type')
-      .eq('patent_id', selected.patent_id)
-
-    if (!live) return
-    if (linkError) {
-      setAssociatedError(linkError.message)
-      setAssociated([])
-      setAssociatedLoading(false)
-      return
-    }
-    if (!links?.length) {
-      setAssociated([])
-      setAssociatedLoading(false)
-      return
-    }
-
-    const { data: patents, error: patentError } = await supabase
-      .from('patents')
-      .select('*')
-      .in('patent_id', links.map((l) => l.associated_patent_id))
-
-    if (!live) return
-    if (patentError) {
-      setAssociatedError(patentError.message)
-      setAssociated([])
-    } else {
-      const found = new Map((patents ?? []).map((p) => [String(p.patent_id), p]))
-      setAssociated(
-        links
-          .map((l) => {
-            const p = found.get(String(l.associated_patent_id))
-            return {
-              ...(p ?? { patent_id: l.associated_patent_id }),
-              association_type: l.association_type,
-              inDb: !!p,
-            }
-          })
-          .sort((a, b) => (a.association_type ?? '').localeCompare(b.association_type ?? ''))
-      )
-    }
-    setAssociatedLoading(false)
-  })()
-
-  return () => { live = false }
-}, [selected?.patent_id])
-
   function handleStatusChange(status) {
     setFilterTouched(true)
     setStatusFilter(status)
@@ -214,56 +152,91 @@ export default function SearchScreen({ statuses, selected, onSelect, savedIds = 
   }
 
   return (
-   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 36 }}>
-     <SearchBar
-       query={query}
-       onQueryChange={(value) => { setQuery(value); setDropdownOpen(true) }}
-       results={results}
-       loading={searchLoading}
-       error={
-         !isSupabaseConfigured
-           ? 'Supabase is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-           : searchError
-       }
-       showResults={dropdownOpen && query.trim() !== ''}
-       onSelect={handleSelect}
-       onFocus={() => setDropdownOpen(true)}
-       onBlur={() => setDropdownOpen(false)}
-       canFetchLive={isSupabaseConfigured && !searchLoading && !searchError && results.length === 0 && /^\d+$/.test(query.trim())}
-       fetchingLive={fetchingLive}
-       fetchLiveError={fetchLiveError}
-       onFetchLive={handleFetchLive}
-     />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 36 }}>
+      <SearchBar
+        query={query}
+        onQueryChange={(value) => { setQuery(value); setDropdownOpen(true) }}
+        results={results}
+        loading={searchLoading}
+        error={
+          !isSupabaseConfigured
+            ? 'Supabase is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+            : searchError
+        }
+        showResults={dropdownOpen && query.trim() !== ''}
+        onSelect={handleSelect}
+        onFocus={() => setDropdownOpen(true)}
+        onBlur={() => setDropdownOpen(false)}
+        canFetchLive={isSupabaseConfigured && !searchLoading && !searchError && results.length === 0 && /^\d+$/.test(query.trim())}
+        fetchingLive={fetchingLive}
+        fetchLiveError={fetchLiveError}
+        onFetchLive={handleFetchLive}
+      />
 
-    <StatusFilter options={statuses} value={statusFilter} onChange={handleStatusChange} />
+      <StatusFilter options={statuses} value={statusFilter} onChange={handleStatusChange} />
 
       <ExpiryFilter active={expirySoon} days={expiryDays} onToggle={handleExpiryToggle} onDaysChange={setExpiryDays} />
 
-     {!selected && (
-     <GlassPanel style={{ width: '100%', maxWidth: 'var(--ipf-max-content)', display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-2)', textAlign: 'left' }}>
-       {!filterTouched ? (
-         <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>
-           Search for patent details here.
-         </div>
-       ) : statusListError ? (
-         <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-danger)' }}>{statusListError}</div>
-       ) : statusListLoading ? (
-         <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>Loading patents…</div>
-       ) : statusList.length === 0 ? (
-         <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>
-           {expirySoon
-             ? `No ${statusFilter === 'All' ? 'patents' : `“${statusFilter}” patents`} expiring within ${expiryDays || 0} days.`
-             : `No patents found for “${statusFilter}”.`}
-         </div>
-       ) : (
-         statusList.map((p) => {
-           const active = selected?.patent_id === p.patent_id
-           return (
-             <button
-               key={p.patent_id} type="button"
-               onClick={() => onSelect(p)}
-               style={{
-                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--ipf-space-4)',
-                 width: '100%', padding: '10px 14px', border: 'none', borderRadius: 'var(--ipf-radius-sm)',
-                background: active ? 'var(--ipf-state-active)' : 'transparent',
-                color: 'var(--ipf-text-heading)', textAlign: 'left', cursor: 'pointer', font: 'inherit',
+      {!selected && (
+      <GlassPanel style={{ width: '100%', maxWidth: 'var(--ipf-max-content)', display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-2)', textAlign: 'left' }}>
+        {!filterTouched ? (
+          <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>
+            Search for patent details here.
+          </div>
+        ) : statusListError ? (
+          <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-danger)' }}>{statusListError}</div>
+        ) : statusListLoading ? (
+          <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>Loading patents…</div>
+        ) : statusList.length === 0 ? (
+          <div style={{ padding: '12px 14px', fontSize: 'var(--ipf-type-sm-size)', color: 'var(--ipf-text-secondary)' }}>
+            {expirySoon
+              ? `No ${statusFilter === 'All' ? 'patents' : `“${statusFilter}” patents`} expiring within ${expiryDays || 0} days.`
+              : `No patents found for “${statusFilter}”.`}
+          </div>
+        ) : (
+          statusList.map((p) => {
+            const active = selected?.patent_id === p.patent_id
+            return (
+              <button
+                key={p.patent_id} type="button"
+                onClick={() => onSelect(p)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--ipf-space-4)',
+                  width: '100%', padding: '10px 14px', border: 'none', borderRadius: 'var(--ipf-radius-sm)',
+                  background: active ? 'var(--ipf-state-active)' : 'transparent',
+                  color: 'var(--ipf-text-heading)', textAlign: 'left', cursor: 'pointer', font: 'inherit',
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--ipf-state-hover)' }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ipf-space-1)', minWidth: 0 }}>
+                  <span style={{ fontSize: 'var(--ipf-type-sm-size)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.title || p.patent_id || 'Untitled patent'}
+                  </span>
+                  <span style={{ fontSize: 'var(--ipf-type-xs-size)', color: 'var(--ipf-text-muted)' }}>
+                    {p.patent_id ? `#${p.patent_id}` : ''}{p.inventor_name ? ` · ${p.inventor_name}` : ''}
+                    {expirySoon && p.expiry_date ? ` · ${daysUntil(p.expiry_date)} days left` : ''}
+                  </span>
+                </span>
+                {p.status ? <StatusPill status={p.status} /> : null}
+              </button>
+            )
+          })
+        )}
+      </GlassPanel>
+      )}
+
+      {selected && (
+        <Button
+          variant={savedIds.includes(selected.patent_id) ? 'active' : 'solid'}
+          icon={savedIds.includes(selected.patent_id) ? 'circle-x' : 'bookmark-plus'}
+          onClick={() => onSave(selected.patent_id)}
+        >
+          {savedIds.includes(selected.patent_id) ? 'Remove from dashboard' : 'Save to dashboard'}
+        </Button>
+      )}
+
+      <PatentDetail patent={selected} />
+    </div>
+  )
+}
