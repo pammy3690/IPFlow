@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Icon from './Icon.jsx'
 
-export default function TopBar({ title = 'Dashboard', account = 'Profile', onMenu, onProfile, onDeleteAccount, children }) {
+export default function TopBar({ title = 'Dashboard', account = 'Profile', onMenu, onProfile, onDeleteAccount, emailReminders, onToggleEmailReminders, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -32,6 +32,18 @@ export default function TopBar({ title = 'Dashboard', account = 'Profile', onMen
                 boxShadow: 'var(--ipf-shadow-menu)', padding: 'var(--ipf-space-2)', display: 'flex', flexDirection: 'column',
               }}
             >
+              {onToggleEmailReminders && (
+                <button
+                  type="button"
+                  onClick={() => onToggleEmailReminders(!emailReminders)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--ipf-space-3)', width: '100%', padding: '10px 12px', border: 'none', borderRadius: 'var(--ipf-radius-sm)', background: 'transparent', color: 'var(--ipf-text-heading)', fontFamily: 'var(--ipf-font-sans)', fontSize: 'var(--ipf-type-sm-size)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ipf-state-hover)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <Icon name={emailReminders ? 'bell' : 'bell-off'} size={16} />
+                  {emailReminders ? 'Unsubscribe from emails' : 'Subscribe to emails'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => { setMenuOpen(false); onProfile && onProfile() }}

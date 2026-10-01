@@ -48,7 +48,7 @@ Deno.serve(async () => {
     if (userCache.has(id)) return userCache.get(id)!;
     const { data } = await supabase.auth.admin.getUserById(id);
     const u = data?.user;
-    const val = u?.email && u.email_confirmed_at
+    const val = u?.email && u.email_confirmed_at && u.user_metadata?.email_reminders !== false
       ? { email: u.email, name: u.user_metadata?.name as string | undefined }
       : null;
     userCache.set(id, val);
@@ -78,7 +78,7 @@ Deno.serve(async () => {
           subject: `Patent ${ren.patent_id}: renewal due ${ren.due_date}`,
           html: `<p>Hi${user.name ? ` ${user.name}` : ""},</p> <br></br>
                  <p><strong>${title}</strong> has a renewal fee due on ${ren.due_date}.</p> <br></br>
-                 <p>You're getting this because you saved this patent. Unsave it in your dashboard to stop reminders.</p> <br></br>
+                 <p>You're getting this because you saved this patent. Unsubscribe in your dashboard to stop reminders.</p> <br></br>
                  <p> Warm regards, </p>
                  <p> IPFlow </p>`,
         }),

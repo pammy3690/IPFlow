@@ -43,6 +43,8 @@ export default function App() {
 
   const signedIn = guest || Boolean(session)
   const account = session?.user?.user_metadata?.name || session?.user?.user_metadata?.organisation || session?.user?.email || 'there'
+  // Renewal reminder emails are on unless the user has opted out.
+  const emailReminders = session?.user?.user_metadata?.email_reminders !== false
 
   const { statuses, loading } = usePatentsOverview(signedIn)
   const { savedIds, savePatent } = useSavedPatents(session?.user?.id ?? null)
@@ -58,6 +60,12 @@ export default function App() {
     setGuest(false)
     setSection('overview')
     setSelected(null)
+  }
+
+  // updateUser fires onAuthStateChange (USER_UPDATED), which refreshes session.
+  async function setEmailReminders(enabled) {
+    const { error } = await supabase.auth.updateUser({ data: { email_reminders: enabled } })
+    if (error) console.error('Failed to update email preference', error)
   }
 
   async function deleteAccount() {
@@ -94,6 +102,8 @@ export default function App() {
             <TopBar
               title={TITLES[section]} account={account} onProfile={signOut}
               onDeleteAccount={session ? () => { setDeleteError(null); setConfirmDelete(true) } : undefined}
+              emailReminders={emailReminders}
+              onToggleEmailReminders={session ? setEmailReminders : undefined}
             />
             {section === 'overview' && (
               <DashboardScreen
