@@ -72,7 +72,7 @@ Deno.serve(async () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "IPFlow <onboarding@resend.dev>",
+          from: "IPFlow <ipflow.patentupdates@gmail.com>",
           to: user.email,
           subject: `Patent ${ren.patent_id}: renewal due ${ren.due_date}`,
           html: `<p>Hi${user.name ? ` ${user.name}` : ""},</p> <br></br>
